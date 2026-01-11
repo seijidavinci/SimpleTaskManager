@@ -10,19 +10,27 @@ namespace SimpleTaskManager
         public string Description { get; set; }
         public bool IsCompleted { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string Priority { get; set; }  // NEW: Priority field
 
-        public Task(int id, string description)
+        public Task(int id, string description, string priority = "Normal")
         {
             Id = id;
             Description = description;
             IsCompleted = false;
             CreatedAt = DateTime.Now;
+            Priority = priority;  // NEW: Set priority
         }
 
         public override string ToString()
         {
             string status = IsCompleted ? "[✓]" : "[ ]";
-            return $"{status} {Id}. {Description} (Created: {CreatedAt:MM/dd/yyyy HH:mm})";
+            string priorityColor = Priority switch
+            {
+                "High" => "🔴",
+                "Low" => "🟢",
+                "Normal" => "🟡"
+            };
+            return $"{status} {priorityColor} {Id}. [{Priority}] {Description} (Created: {CreatedAt:MM/dd/yyyy HH:mm})";
         }
     }
 
@@ -37,7 +45,7 @@ namespace SimpleTaskManager
             nextId = 1;
         }
 
-        public void AddTask(string description)
+        public void AddTask(string description, string priority = "Normal")  // NEW: Priority parameter
         {
             if (string.IsNullOrWhiteSpace(description))
             {
@@ -45,9 +53,16 @@ namespace SimpleTaskManager
                 return;
             }
 
-            Task newTask = new Task(nextId++, description);
+            // Validate priority
+            if (priority != "High" && priority != "Normal" && priority != "Low")
+            {
+                Console.WriteLine("Invalid priority! Using 'Normal' as default.");
+                priority = "Normal";
+            }
+
+            Task newTask = new Task(nextId++, description, priority);
             tasks.Add(newTask);
-            Console.WriteLine($"✓ Task added successfully! (ID: {newTask.Id})");
+            Console.WriteLine($"✓ Task added successfully with {priority} priority! (ID: {newTask.Id})");
         }
 
         public void ViewTasks()
@@ -115,6 +130,24 @@ namespace SimpleTaskManager
                 Console.WriteLine(task);
             }
         }
+
+        // NEW: View tasks by priority
+        public void ViewTasksByPriority(string priority)
+        {
+            var priorityTasks = tasks.Where(t => t.Priority == priority).ToList();
+            
+            if (priorityTasks.Count == 0)
+            {
+                Console.WriteLine($"No tasks with {priority} priority found!");
+                return;
+            }
+
+            Console.WriteLine($"\n=== {priority.ToUpper()} PRIORITY TASKS ===");
+            foreach (var task in priorityTasks)
+            {
+                Console.WriteLine(task);
+            }
+        }
     }
 
     class Program
@@ -126,6 +159,7 @@ namespace SimpleTaskManager
 
             Console.WriteLine("╔════════════════════════════════════╗");
             Console.WriteLine("║   WELCOME TO TASK MANAGER APP      ║");
+            Console.WriteLine("║        (WITH PRIORITY FEATURE)     ║");
             Console.WriteLine("╚════════════════════════════════════╝\n");
 
             while (running)
@@ -134,10 +168,11 @@ namespace SimpleTaskManager
                 Console.WriteLine("1. Add Task");
                 Console.WriteLine("2. View All Tasks");
                 Console.WriteLine("3. View Pending Tasks");
-                Console.WriteLine("4. Complete Task");
-                Console.WriteLine("5. Delete Task");
-                Console.WriteLine("6. Exit");
-                Console.Write("\nChoose an option (1-6): ");
+                Console.WriteLine("4. View Tasks by Priority");  // NEW
+                Console.WriteLine("5. Complete Task");
+                Console.WriteLine("6. Delete Task");
+                Console.WriteLine("7. Exit");
+                Console.Write("\nChoose an option (1-7): ");
 
                 string choice = Console.ReadLine();
 
@@ -146,7 +181,10 @@ namespace SimpleTaskManager
                     case "1":
                         Console.Write("Enter task description: ");
                         string description = Console.ReadLine();
-                        taskManager.AddTask(description);
+                        Console.Write("Enter priority (High/Normal/Low) [Default: Normal]: ");
+                        string priority = Console.ReadLine();
+                        if (string.IsNullOrWhiteSpace(priority)) priority = "Normal";
+                        taskManager.AddTask(description, priority);
                         break;
 
                     case "2":
@@ -157,7 +195,13 @@ namespace SimpleTaskManager
                         taskManager.ViewPendingTasks();
                         break;
 
-                    case "4":
+                    case "4":  // NEW
+                        Console.Write("Enter priority to view (High/Normal/Low): ");
+                        string viewPriority = Console.ReadLine();
+                        taskManager.ViewTasksByPriority(viewPriority);
+                        break;
+
+                    case "5":
                         Console.Write("Enter task ID to complete: ");
                         if (int.TryParse(Console.ReadLine(), out int completeId))
                         {
@@ -169,7 +213,7 @@ namespace SimpleTaskManager
                         }
                         break;
 
-                    case "5":
+                    case "6":
                         Console.Write("Enter task ID to delete: ");
                         if (int.TryParse(Console.ReadLine(), out int deleteId))
                         {
@@ -181,13 +225,13 @@ namespace SimpleTaskManager
                         }
                         break;
 
-                    case "6":
+                    case "7":
                         running = false;
                         Console.WriteLine("\nThank you for using Task Manager. Goodbye!");
                         break;
 
                     default:
-                        Console.WriteLine("Invalid option! Please choose 1-6.");
+                        Console.WriteLine("Invalid option! Please choose 1-7.");
                         break;
                 }
             }
