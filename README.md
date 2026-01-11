@@ -20,3 +20,4 @@ dotnet run
 
 ## Author
 Created by seijidavinci as a learning project for C# and Git
+THIS IS A MISTAKE - WRONG INFORMATION
